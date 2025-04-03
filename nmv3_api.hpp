@@ -5,6 +5,7 @@
 #include <globals.hpp>
 #include <display.hpp>
 #include <get_set_macros.hpp>
+#include <device_actions.hpp>
 
 // --- Sizes ---
 #define MODEM_MSG_MIN 2
@@ -755,13 +756,11 @@ void set_address(HardwareSerial connection, uint8_t addr);
 uint8_t get_modem_address();
 void broadcast(HardwareSerial connection, char *data, uint8_t bytes);
 void ping(HardwareSerial connection, uint8_t addr);
-void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse);
-void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse);
-void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast);
-void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse);
-void parse_unicast_packet(UnicastResponsePacket_t* unicast);
-void packet_received_modem(uint8_t* packetBuffer, uint8_t size);
-void packet_received_nest(uint8_t* packetBuffer, uint8_t size);
-
+void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, DeviceAction_t* da);
+void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse, DeviceAction_t* da);
+void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceAction_t* da);
+void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t* da);
+void parse_unicast_packet(UnicastResponsePacket_t* unicast, DeviceAction_t* da);
+void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da);
 
 #endif

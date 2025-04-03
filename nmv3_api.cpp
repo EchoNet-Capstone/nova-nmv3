@@ -1,5 +1,7 @@
-#include "nmv3_api.hpp"
 #include <floc.hpp>
+#include <device_actions.hpp>
+
+#include "nmv3_api.hpp"
 
 GET_SET_FUNC_DEF(uint8_t, modem_id, 0)
 
@@ -51,7 +53,7 @@ void ping(HardwareSerial connection, uint8_t addr) {
     connection.printf("$P%03d", addr);
 }
 
-void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse) {
+void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, DeviceAction_t* da) {
     uint8_t node_addr = (uint8_t) fieldToInt((char*) statusResponse->addr, QUERY_STATUS_RESP_ADDR_MAX);
 
     uint16_t supply_voltage_meas = (uint16_t) fieldToInt((char*) statusResponse->voltPayload, QUERY_STATUS_RESP_VOLT_PAYLOAD_MAX);
@@ -65,7 +67,7 @@ void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse) 
     floc_status_send(statusResponse);
 }
 
-void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse) {
+void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse, DeviceAction_t* da) {
     uint8_t new_addr = (uint8_t) fieldToInt((char*) setAddressResponse->addr, SET_ADDRESS_RESP_ADDR_MAX);
 
     if (debug) {
@@ -76,7 +78,7 @@ void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse) {
     display_modem_id(get_modem_id());
 }
 
-void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast) {
+void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceAction_t* da) {
     Serial.printf("Parsing broadcast packet...\r\n");
 
     uint8_t src_addr = fieldToInt((char*) broadcast->header.addr, BROADCAST_RESP_ADDR_MAX);
@@ -94,10 +96,10 @@ void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast) {
     //     Serial.printf("\r\n");
     // }
 
-    floc_broadcast_received(message, bytes);
+    floc_broadcast_received(message, bytes, da);
 }
 
-void parse_unicast_packet(UnicastResponsePacket_t* unicast) {
+void parse_unicast_packet(UnicastResponsePacket_t* unicast, DeviceAction_t* da) {
     uint8_t bytes = (uint8_t) fieldToInt((char*) unicast->dataSize, UNICAST_RESP_DATA_SIZE_MAX);
 
     char message[bytes+1] = {0};
@@ -110,7 +112,7 @@ void parse_unicast_packet(UnicastResponsePacket_t* unicast) {
 }
 
 // Also handles ack packets from Unicast with ack command
-void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse) {
+void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t* da) {
     uint8_t src_addr = (uint8_t) fieldToInt((char*) rangeResponse->addr, RANGE_RESP_ADDR_MAX);
     uint16_t ping_propogation_counter = (uint16_t) fieldToInt((char*) rangeResponse->rangePayload, RANGE_RESP_PAYLOAD_MAX);
 
@@ -121,7 +123,7 @@ void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse) {
     }
 }
 
-void packet_received_modem(uint8_t* packetBuffer, uint8_t size) {
+void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da) {
     /*if (debug) {
         Serial.printf("PKT RECV (%02u bytes): [", size);
         for(int i = 0; i < size; i++){
@@ -228,17 +230,17 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size) {
                 QueryStatusResponsePacket_t* statusResponse = (QueryStatusResponsePacket_t*) &response->response;
                 if (size == QUERY_STATUS_RESP_MAX) {
                     QueryStatusResponseFullPacket_t* fullStatus = (QueryStatusResponseFullPacket_t*) &statusResponse->status;
-                    parse_status_query_packet(fullStatus);
+                    parse_status_query_packet(fullStatus, da);
                 } else if (size == SET_ADDRESS_RESP_MAX) {
                     SetAddressResponsePacket_t* setAddressResponse = (SetAddressResponsePacket_t*) &statusResponse->status;
-                    parse_set_address_packet(setAddressResponse);
+                    parse_set_address_packet(setAddressResponse, da);
                 }
                 break;
             }
             case BROADCAST_RESP_TYPE: // 'B' 
             {  
                 BroadcastMessageResponsePacket_t* broadcast = (BroadcastMessageResponsePacket_t*) &response->response;
-                parse_broadcast_packet(broadcast);
+                parse_broadcast_packet(broadcast, da);
                 break;
             }
             case CHN_IMP_RESP_TYPE: // 'C'
@@ -248,7 +250,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size) {
                 RangeDataResponsePacket_t* rangeResponse = (RangeDataResponsePacket_t*) &response->response;
 
                 if (size == RANGE_RESP_MAX) {
-                    parse_ping_packet(rangeResponse);
+                    parse_ping_packet(rangeResponse, da);
                 }
                 break;
             }
@@ -262,7 +264,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size) {
             case UNICAST_RESP_TYPE: // 'U' 
             {
                 UnicastResponsePacket_t* unicast = (UnicastResponsePacket_t*) &response->response;
-                parse_unicast_packet(unicast);
+                parse_unicast_packet(unicast, da);
                 break;
             }
 
@@ -277,47 +279,6 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size) {
         Serial.printf("Error...\r\n");
         // Packet does not follow modem response structure (starts with $ or #)
         // if (debug) print_packet(packetBuffer, "Unknown prefix [modem packet]");
-        return;
-    }
-}
-
-// BEGIN NeST SERIAL CONNECTION FUNCTIONS -----------------
-
-void packet_received_nest(uint8_t* packetBuffer, uint8_t size) {
-    
-    if (size < 3) {
-        // Need a prefix character, a casting type, and at least one byte of data e.g. $BX for a broadcast with data 'X'
-        if (debug) Serial.println("NeST packet too small. Minimum size : 3.");
-        return;
-    }
-
-    uint8_t pkt_type = *(packetBuffer++); // Remove '$' prefix
-
-    SerialFlocPacket_t* pkt = (SerialFlocPacket_t*)(packetBuffer);
-
-    if (pkt_type == '$') {
-        switch (pkt->header.type) {
-            // Broadcast the data received on the serial line
-            case SERIAL_BROADCAST_TYPE: // 'B'
-            {
-                SerialBroadcastPacket_t* broadcastPacket = (SerialBroadcastPacket_t* )&pkt->payload;
-                broadcast(MODEM_SERIAL_CONNECTION, (char*) broadcastPacket, pkt->header.size);
-                // display_modem_packet_data(packetBuffer);
-                break;
-            }
-            case SERIAL_UNICAST_TYPE:   // 'U'
-                // TODO : need to extract dst from packet in order to send packet
-                // May not need to implement, depending on networking strategy
-                break;
-            default:
-                if (debug) {
-                    Serial.printf("Unhandled packet type [NeST] : prefix [%c]\r\n", packetBuffer[1]);
-                    Serial.printf("Full packet : %s\r\n", packetBuffer);
-                }
-        }
-    } else {
-        // Packet does not follow nest prefix structure (starts with $)
-        // if (debug) print_packet(packetBuffer, "Unknown prefix [NeST packet]");
         return;
     }
 }
