@@ -40,11 +40,14 @@ uint8_t get_modem_address() {
 }
 
 void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
-    /*Serial.printf("$B%02u", bytes);
-    for (int i = 0; i < bytes; i++) {
-        Serial.printf(" %02X", (uint8_t)data[i]);
+    if(debug){
+        Serial.printf("$B%02u", bytes);
+        for (int i = 0; i < bytes; i++) {
+            Serial.printf(" %02X", (uint8_t)data[i]);
+        }
+        Serial.printf("\r\n");
     }
-    Serial.println();*/
+
     connection.printf("$B%02u", bytes);
     connection.write((uint8_t *)data, bytes);
 }
@@ -88,13 +91,13 @@ void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceA
 
     uint8_t *message = (uint8_t*) &broadcast->message;
 
-    // if (debug) {
-    //     Serial.printf("Broadcast packet received.\r\n\tPacket src addr : %03ld\r\n\tPacket Bytes : %ld\r\n\tPacket data : ", src_addr, bytes);
-    //     for(int i = 0; i < bytes; i++){
-    //         Serial.printf("%X", broadcastBuffer[i]);
-    //     }
-    //     Serial.printf("\r\n");
-    // }
+    if (debug) {
+        Serial.printf("Broadcast packet received.\r\n\tPacket src addr : %03ld\r\n\tPacket Bytes : %ld\r\n\tPacket data : ", src_addr, bytes);
+        for(int i = 0; i < bytes; i++){
+            Serial.printf("%X", message[i]);
+        }
+        Serial.printf("\r\n");
+    }
 
     floc_broadcast_received(message, bytes, da);
 }
@@ -124,14 +127,14 @@ void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t*
 }
 
 void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da) {
-    /*if (debug) {
+    if (debug) {
         Serial.printf("PKT RECV (%02u bytes): [", size);
         for(int i = 0; i < size; i++){
             // Serial.printf("%02x, ", packetBuffer[i]);
             Serial.printf("%c, ", packetBuffer[i]);
         }
         Serial.printf("]\r\n");
-    }*/
+    }
     
     if (size < 1) {
         // Should never happen over serial connection.
@@ -153,17 +156,19 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
     if (pkt->type == MODEM_LOCAL_RESPONSE_TYPE) { // '$'
         ModemLocalResponsePacket_t* localResp = (ModemLocalResponsePacket_t* )&pkt->payload;
 
-        Serial.printf("Local Echo...");
+        Serial.printf("Local Echo...\r\n");
 
         // Local Echo
         switch (localResp->type) {
             case BROADCAST_CMD_LOCAL_RESP_TYPE: // 'B'
                 if (size == BROADCAST_CMD_LOCAL_RESP_MAX) {
-                    // if (debug) {
-                    //     Serial.printf("Broadcast of %02ld bytes sent.\r\n",
-                    //     packetBuffer.substring(BROADCAST_LOCAL_ECHO_BYTE_LENGTH_START, 
-                    //                            BROADCAST_LOCAL_ECHO_BYTE_LENGTH_END).toInt());
-                    // }
+                    if (debug) {
+                        Serial.printf("Broadcast of ");
+                        for (int i = 0; i < BROADCAST_CMD_LOCAL_RESP_DATA_SIZE_MAX; i++){
+                            Serial.printf("%c", ((BroadcastLocalResponsePacket_t*) &localResp->response)->dataSize[i]);
+                        }
+                        Serial.print(" bytes sent.\r\n");
+                    }
                 }
                 break;
             case CHN_IMP_CMD_LOCAL_RESP_TYPE: // 'C' Will also be reached if it's a Corrected Error Local Response Packet
@@ -214,10 +219,14 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
 
             default:
                 break;
-                // if (debug) {
-                //     Serial.printf("Unhandled packet type [modem].\r\n\tPrefix : %c\r\n", packetBuffer.charAt(1));
-                //     Serial.println("\tFull packet : " + packetBuffer);
-                // }
+                if (debug) {
+                    Serial.printf("Unhandled packet type for local response.\r\n\tPrefix : %c\r\n", (char) localResp->type);
+                    Serial.print("\tFull packet : ");
+                    for(int i = 0; i < size; i++){
+                        Serial.printf("%02X ", pkt[i]);
+                    }
+                    Serial.print("\r\n");
+                }
         }
     } else if (pkt->type == MODEM_RESPONSE_TYPE) { // '#'
         Serial.printf("Response packet...\r\n");
@@ -270,15 +279,25 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
 
             default:
                 break;
-                // if (debug) {
-                //     Serial.printf("Unhandled packet type [modem].\r\n\tPrefix : %c\r\n", packetBuffer.charAt(1));
-                //     Serial.println("\tFull packet : " + packetBuffer);
-                // }
+                if (debug) {
+                    Serial.printf("Unhandled packet type for modem response.\r\n\tPrefix : %c\r\n", (char) response->type);
+                    Serial.print("\tFull packet : ");
+                    for(int i = 0; i < size; i++){
+                        Serial.printf("%02X ", pkt[i]);
+                    }
+                    Serial.print("\r\n");
+                }
         }
     } else {
         Serial.printf("Error...\r\n");
-        // Packet does not follow modem response structure (starts with $ or #)
-        // if (debug) print_packet(packetBuffer, "Unknown prefix [modem packet]");
+        if (debug) {
+            Serial.printf("Packet does not follow normal acoustic packet structure.\r\n\tPrefix : %c\r\n", (char) pkt->type);
+            Serial.print("\tFull packet : ");
+            for(int i = 0; i < size; i++){
+                Serial.printf("%02X ", pkt[i]);
+            }
+            Serial.print("\r\n");
+        }
         return;
     }
 }
