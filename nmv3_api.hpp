@@ -1,9 +1,10 @@
 #ifndef HELTEC_SERIAL_API_H
 #define HELTEC_SERIAL_API_H
 
+#include <stdint.h>
+
 #include <Arduino.h>
-#include <globals.hpp>
-#include <display.hpp>
+
 #include <get_set_macros.hpp>
 #include <device_actions.hpp>
 
@@ -749,17 +750,67 @@ typedef struct ModemPacket_t {
 
 #pragma pack(pop)
 
+// --- Packet Sizes ---
+/**
+ * BROADCAST_CMD_LOCAL_RESP_MAX
+ * UNICAST_ACK_CMD_LOCAL_RESP_MAX
+ * PING_CMD_LOCAL_RESP_MAX
+ * UNICAST_CMD_LOCAL_RESP_MAX
+ * 
+ * QUERY_STATUS_RESP_MAX
+ * SET_ADDRESS_RESP_MAX
+ * RANGE_RESP_MAX
+ * TIMEOUT_MAX
+ */
+
+// Modem Packet Headers
+#define MODEM_LOCAL_RESP_HEADER_SIZE            MODEM_LOCAL_RESP_PRE_MAX + \
+                                                MODEM_LOCAL_RESP_TYPE_MAX
+
+#define MODEM_RESP_HEADER_SIZE                  MODEM_RESP_PRE_MAX + \
+                                                MODEM_RESP_TYPE_MAX
+// Local Responses
+#define BROADCAST_CMD_LOCAL_RESP_PACKET_SIZE    MODEM_LOCAL_RESP_HEADER_SIZE + \
+                                                BROADCAST_CMD_LOCAL_RESP_MAX
+
+#define UNICAST_ACK_CMD_LOCAL_RESP_PACKET_SIZE  MODEM_LOCAL_RESP_HEADER_SIZE + \
+                                                UNICAST_ACK_CMD_LOCAL_RESP_MAX
+
+#define PING_CMD_LOCAL_RESP_PACKET_SIZE         MODEM_LOCAL_RESP_HEADER_SIZE + \
+                                                PING_CMD_LOCAL_RESP_MAX
+                                                
+#define UNICAST_CMD_LOCAL_RESP_PACKET_SIZE      MODEM_LOCAL_RESP_HEADER_SIZE + \
+                                                UNICAST_CMD_LOCAL_RESP_MAX
+
+// Responses
+#define QUERY_STATUS_RESP_PACKET_SIZE           MODEM_RESP_HEADER_SIZE + \
+                                                QUERY_STATUS_RESP_MAX
+
+#define SET_ADDRESS_RESP_PACKET_SIZE            MODEM_RESP_HEADER_SIZE + \
+                                                SET_ADDRESS_RESP_MAX
+
+#define RANGE_RESP_PACKET_SIZE                  MODEM_RESP_HEADER_SIZE + \
+                                                RANGE_RESP_MAX
+
+#define TIMEOUT_PACKET_SIZE                     MODEM_RESP_HEADER_SIZE + \
+                                                TIMEOUT_MAX
+
+
+// --- Function Prototypes ---
+
 GET_SET_FUNC_PROTO(uint8_t, modem_id)
 
 void query_status(HardwareSerial connection);
 void set_address(HardwareSerial connection, uint8_t addr);
 void broadcast(HardwareSerial connection, char *data, uint8_t bytes);
 void ping(HardwareSerial connection, uint8_t addr);
+
 void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, DeviceAction_t* da);
 void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse, DeviceAction_t* da);
 void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceAction_t* da);
 void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t* da);
 void parse_unicast_packet(UnicastResponsePacket_t* unicast, DeviceAction_t* da);
+
 void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da);
 
 #endif
