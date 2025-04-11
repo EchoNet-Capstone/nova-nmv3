@@ -50,7 +50,7 @@ void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
 
     if(debug){
         Serial.printf("Sending Broadcast Command Packet:\r\n");
-        printPacketContents((uint8_t*) &pkt, pkt_size);
+        printBufferContents((uint8_t*) &pkt, pkt_size);
     }
 
     connection.write((uint8_t *) &pkt, pkt_size);
@@ -126,7 +126,7 @@ void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t*
 
 void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da) {
     if (debug) {
-        printPacketContents((uint8_t*) packetBuffer, size);
+        printBufferContents((uint8_t*) packetBuffer, size);
     }
     
     if (size < 1) {
