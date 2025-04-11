@@ -1,9 +1,9 @@
+#include <string.h>
+
 #include <floc.hpp>
 #include <device_actions.hpp>
 
 #include "nmv3_api.hpp"
-
-GET_SET_FUNC_DEF(uint8_t, modem_id, 0)
 
 // Supported Modem Commands (Link Quality Indicator OFF)
 //  Query Status                                DONE
@@ -26,6 +26,7 @@ int fieldToInt(char* field, uint8_t field_len){
 }
 
 // BEGIN MODEM SERIAL CONNECTION FUNCTIONS -----------------
+GET_SET_FUNC_DEF(uint8_t, modem_id, 0)
 
 void query_status(HardwareSerial connection) {
     connection.print("$?");
@@ -35,21 +36,31 @@ void set_address(HardwareSerial connection, uint8_t addr) {
     connection.printf("$A%03d", addr);
 }
 
-uint8_t get_modem_address() {
-    return modem_id;
-}
-
 void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
+    ModemPacket_t pkt;
+    memset(&pkt, 0, sizeof(pkt));
+
+    pkt.type = MODEM_COMMAND_TYPE;
+    pkt.payload.command.type = BROADCAST_CMD_TYPE;
+
+    char temp[BROADCAST_CMD_DATA_SIZE_MAX + 1] = {0};
+    snprintf(temp, sizeof(temp), "%02u", bytes);
+
+    memcpy(pkt.payload.command.command.broadcastMessage.header.dataSize, (uint8_t*) temp, BROADCAST_CMD_HDR_MAX);
+    
+    memcpy(pkt.payload.command.command.broadcastMessage.payload, (uint8_t*) data, bytes);
+
+    uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX + BROADCAST_CMD_HDR_MAX + bytes);
+
     if(debug){
-        Serial.printf("$B%02u", bytes);
-        for (int i = 0; i < bytes; i++) {
-            Serial.printf(" %02X", (uint8_t)data[i]);
+        Serial.printf("Sending Broadcast Command Packet: ");
+        for(uint8_t i = 0; i < pkt_size; i++) {
+            Serial.printf("%c, ", ((char*) &pkt)[i]);
         }
         Serial.printf("\r\n");
     }
 
-    connection.printf("$B%02u", bytes);
-    connection.write((uint8_t *)data, bytes);
+    connection.write((uint8_t *) &pkt, pkt_size);
 }
 
 void ping(HardwareSerial connection, uint8_t addr) {
@@ -89,7 +100,7 @@ void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceA
 
     Serial.printf("Src_addr: %d, Size: %d\r\n", src_addr, bytes);
 
-    uint8_t *message = (uint8_t*) &broadcast->message;
+    uint8_t* message = (uint8_t*) &broadcast->message;
 
     if (debug) {
         Serial.printf("Broadcast packet received.\r\n\tPacket src addr : %03ld\r\n\tPacket Bytes : %ld\r\n\tPacket data : ", src_addr, bytes);
