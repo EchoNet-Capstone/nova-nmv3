@@ -48,7 +48,7 @@ void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
 
     uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX + BROADCAST_CMD_HDR_MAX + bytes);
 
-    if(debug){
+    if (debug) {
         Serial.printf("Sending Broadcast Command Packet:\r\n");
         printBufferContents((uint8_t*) &pkt, pkt_size);
     }
@@ -126,6 +126,7 @@ void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t*
 
 void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da) {
     if (debug) {
+        Serial.printf("Modem Packet Received...");
         printBufferContents((uint8_t*) packetBuffer, size);
     }
     
@@ -135,12 +136,12 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
     }
 
     if (packetBuffer[0] == ERROR_TYPE && size == ERROR_MAX) { // 'E'
-        if (debug) Serial.println("Error packet received.");
+        if (debug) Serial.printf("Error packet received.\r\n");
         return;
     }
 
     if (size < MODEM_MSG_MIN) {
-        if (debug) Serial.println("Packet invalid, size too small.");
+        if (debug) Serial.printf("Packet invalid, size too small.\r\n");
         return;
     }
 
@@ -149,7 +150,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
     if (pkt->type == MODEM_LOCAL_RESPONSE_TYPE) { // '$'
         ModemLocalResponsePacket_t* localResp = (ModemLocalResponsePacket_t* )&pkt->payload;
 
-        Serial.printf("Local Echo...\r\n");
+        if (debug) Serial.printf("Local Echo...\r\n");
 
         // Local Echo
         switch (localResp->type) {
@@ -160,7 +161,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
                         for (int i = 0; i < BROADCAST_CMD_LOCAL_RESP_DATA_SIZE_MAX; i++){
                             Serial.printf("%c", ((BroadcastLocalResponsePacket_t*) &localResp->response)->dataSize[i]);
                         }
-                        Serial.print(" bytes sent.\r\n");
+                        Serial.printf(" bytes sent.\r\n");
                     }
                     break;
                 } else {
@@ -172,13 +173,6 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
                 break;
             case UNICAST_ACK_CMD_LOCAL_RESP_TYPE: // 'M'
                 if (size == UNICAST_ACK_CMD_LOCAL_RESP_PACKET_SIZE) {
-                    // if (debug) {
-                    //     Serial.printf("Unicast (with ACK) of %02ld bytes to address %03ld sent.\r\n",
-                    //     packetBuffer.substring(UNICAST_LOCAL_ECHO_BYTE_LENGTH_START, 
-                    //                            UNICAST_LOCAL_ECHO_BYTE_LENGTH_END).toInt(),
-                    //     packetBuffer.substring(UNICAST_LOCAL_ECHO_DEST_ADDR_START, 
-                    //                            UNICAST_LOCAL_ECHO_DEST_ADDR_END).toInt());
-                    // }
                     break;
                 }
             case PING_CMD_LOCAL_RESP_TYPE: // 'P'
@@ -200,13 +194,6 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
                 break;
             case UNICAST_CMD_LOCAL_RESP_TYPE: // 'U'
                 if (size == UNICAST_CMD_LOCAL_RESP_PACKET_SIZE) {
-                    // if (debug) {
-                    //     Serial.printf("Unicast of %02ld bytes to address %03ld sent.\r\n",
-                    //     packetBuffer.substring(UNICAST_LOCAL_ECHO_BYTE_LENGTH_START, 
-                    //                            UNICAST_LOCAL_ECHO_BYTE_LENGTH_END).toInt(),
-                    //     packetBuffer.substring(UNICAST_LOCAL_ECHO_DEST_ADDR_START, 
-                    //                            UNICAST_LOCAL_ECHO_DEST_ADDR_END).toInt());
-                    // }
                     break;
                 }
             case VOLT_NOISE_MSR_CMD_LOCAL_RESP_TYPE: // 'V'
@@ -219,7 +206,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
                 break;
         }
     } else if (pkt->type == MODEM_RESPONSE_TYPE) { // '#'
-        Serial.printf("Response packet...\r\n");
+        if (debug) Serial.printf("Response packet...\r\n");
 
         ModemResponsePacket_t* response = (ModemResponsePacket_t*)&pkt->payload;
 
@@ -256,7 +243,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
             case TIMEOUT_RESP_TYPE: // 'T' 
                 if (size == TIMEOUT_MAX) {
                     if (debug) {
-                        Serial.println("Timeout.");
+                        Serial.printf("Timeout.\r\n");
                     }
                 }
                 break;
