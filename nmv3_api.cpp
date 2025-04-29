@@ -253,7 +253,7 @@ packet_received_modem(
 
         ParseResult result;
 
-        result.type = ERROR_TYPE;
+        result.type = ERROR_RECV_TYPE;
 
         return result;
     }

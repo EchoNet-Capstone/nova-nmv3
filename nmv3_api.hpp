@@ -857,7 +857,7 @@ ModemPacket_t {
 // --- Response Structs ---
 enum ParseResultType {
     NONE_TYPE,
-    ERROR_TYPE,
+    ERROR_RECV_TYPE,
     BROAD_RECV_TYPE,
     UNICAST_RECV_TYPE,
     PING_RESP_TYPE,
