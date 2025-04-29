@@ -24,15 +24,27 @@
 // BEGIN MODEM SERIAL CONNECTION FUNCTIONS -----------------
 GET_SET_FUNC_DEF(uint8_t, modem_id, 0)
 
-void query_status(HardwareSerial connection) {
+void
+query_status(
+    HardwareSerial connection
+){
     connection.print("$?");
 }
 
-void set_address(HardwareSerial connection, uint8_t addr) {
+void
+set_address(
+    HardwareSerial connection,
+    uint8_t addr
+){
     connection.printf("$A%03d", addr);
 }
 
-void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
+void
+broadcast(
+    HardwareSerial connection,
+    char *data,
+    uint8_t bytes
+){
     ModemPacket_t pkt;
     memset(&pkt, 0, sizeof(pkt));
 
@@ -43,7 +55,7 @@ void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
     snprintf(temp, sizeof(temp), "%02u", bytes);
 
     memcpy(pkt.payload.command.command.broadcastMessage.header.dataSize, (uint8_t*) temp, BROADCAST_CMD_HDR_MAX);
-    
+
     memcpy(pkt.payload.command.command.broadcastMessage.payload, (uint8_t*) data, bytes);
 
     uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX + BROADCAST_CMD_HDR_MAX + bytes);
@@ -52,11 +64,15 @@ void broadcast(HardwareSerial connection, char *data, uint8_t bytes) {
     Serial.printf("Sending Broadcast Command Packet:\r\n");
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
- 
+
     connection.write((uint8_t *) &pkt, pkt_size);
 }
 
-void ping(HardwareSerial connection, uint8_t addr) {
+void
+ping(
+    HardwareSerial connection,
+    uint8_t addr
+){
     connection.printf("$P%03d", addr);
 }
 
@@ -64,7 +80,7 @@ void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, 
     uint8_t node_addr = (uint8_t) fieldToInt((char*) statusResponse->addr, QUERY_STATUS_RESP_ADDR_MAX);
 
     uint16_t supply_voltage_meas = (uint16_t) fieldToInt((char*) statusResponse->voltPayload, QUERY_STATUS_RESP_VOLT_PAYLOAD_MAX);
-    
+
     float supply_voltage = (float)(supply_voltage_meas) * 15.0f / 65536.0f;
 
 #ifdef DEBUG_ON // DEBUG_ON
@@ -74,7 +90,11 @@ void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, 
     floc_status_send(statusResponse);
 }
 
-void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse, DeviceAction_t* da) {
+void
+parse_set_address_packet(
+    SetAddressResponsePacket_t* setAddressResponse,
+    DeviceAction_t* da
+){
     uint8_t new_addr = (uint8_t) fieldToInt((char*) setAddressResponse->addr, SET_ADDRESS_RESP_ADDR_MAX);
 
 #ifdef DEBUG_ON // DEBUG_ON
@@ -85,7 +105,11 @@ void parse_set_address_packet(SetAddressResponsePacket_t* setAddressResponse, De
     display_modem_id(get_modem_id());
 }
 
-void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceAction_t* da) {
+void
+parse_broadcast_packet(
+    BroadcastMessageResponsePacket_t* broadcast,
+    DeviceAction_t* da
+){
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Parsing broadcast packet...\r\n");
 #endif // DEBUG_ON
@@ -98,11 +122,15 @@ void parse_broadcast_packet(BroadcastMessageResponsePacket_t* broadcast, DeviceA
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Broadcast packet received.\r\n\tPacket Source Modem: %03ld\r\n\tMessage Size: %ld\r\n", src_addr, bytes);
 #endif // DEBUG_ON
- 
+
     floc_broadcast_received(message, bytes, da);
 }
 
-void parse_unicast_packet(UnicastResponsePacket_t* unicast, DeviceAction_t* da) {
+void
+parse_unicast_packet(
+    UnicastResponsePacket_t* unicast,
+    DeviceAction_t* da
+){
     uint8_t bytes = (uint8_t) fieldToInt((char*) unicast->dataSize, UNICAST_RESP_DATA_SIZE_MAX);
 
     char message[bytes+1] = {0};
@@ -115,7 +143,11 @@ void parse_unicast_packet(UnicastResponsePacket_t* unicast, DeviceAction_t* da) 
 }
 
 // Also handles ack packets from Unicast with ack command
-void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t* da) {
+void
+parse_ping_packet(
+    RangeDataResponsePacket_t* rangeResponse,
+    DeviceAction_t* da
+){
     uint8_t src_addr = (uint8_t) fieldToInt((char*) rangeResponse->addr, RANGE_RESP_ADDR_MAX);
     uint16_t ping_propogation_counter = (uint16_t) fieldToInt((char*) rangeResponse->rangePayload, RANGE_RESP_PAYLOAD_MAX);
 
@@ -126,12 +158,17 @@ void parse_ping_packet(RangeDataResponsePacket_t* rangeResponse, DeviceAction_t*
 #endif // DEBUG_ON
 }
 
-void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da) {
+void
+packet_received_modem(
+    uint8_t* packetBuffer,
+    uint8_t size,
+    DeviceAction_t* da
+){
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Modem Packet Received...");
     printBufferContents((uint8_t*) packetBuffer, size);
 #endif // DEBUG_ON
- 
+
     if (size < 1) {
         // Should never happen over serial connection.
         return;
@@ -175,7 +212,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
 
                     Serial.printf(" bytes sent.\r\n");
                 #endif // DEBUG_ON
- 
+
                     break;
                 } else {
 
@@ -191,15 +228,15 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
             case PING_CMD_LOCAL_RESP_TYPE: // 'P'
                 if (size == PING_CMD_LOCAL_RESP_PACKET_SIZE) {
                 #ifdef DEBUG_ON // DEBUG_ON
-                    Serial.print("Ping to modem "); 
+                    Serial.print("Ping to modem ");
 
                     for (int i = 0; i < PING_CMD_LOCAL_RESP_ADDR_MAX; i++) {
                         Serial.printf("%c", ((PingLocalResponsePacket_t*) &localResp->response)->addr[i]);
                     }
 
-                    Serial.print("sent.\r\n"); 
+                    Serial.print("sent.\r\n");
                 #endif // DEBUG_ON
- 
+
                     break;
                 }
             case RESET_CMD_LOCAL_RESP_TYPE: // 'R'
@@ -219,7 +256,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
             #ifdef DEBUG_ON // DEBUG_ON
                 Serial.printf("Unhandled packet type for local response.\r\n\tType Received: %c\r\n", (char) localResp->type);
             #endif // DEBUG_ON
- 
+
                 break;
         }
     } else if (pkt->type == MODEM_RESPONSE_TYPE) { // '#'
@@ -231,7 +268,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
 
         switch (response->type) {
             case QUERY_STATUS_RESP_TYPE: // 'A' Will also be reached if it's a Set Address Response Packet
-            { 
+            {
                 QueryStatusResponsePacket_t* statusResponse = (QueryStatusResponsePacket_t*) &response->response;
                 if (size == QUERY_STATUS_RESP_PACKET_SIZE) {
                     QueryStatusResponseFullPacket_t* fullStatus = (QueryStatusResponseFullPacket_t*) &statusResponse->status;
@@ -242,8 +279,8 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
                 }
                 break;
             }
-            case BROADCAST_RESP_TYPE: // 'B' 
-            {  
+            case BROADCAST_RESP_TYPE: // 'B'
+            {
                 BroadcastMessageResponsePacket_t* broadcast = (BroadcastMessageResponsePacket_t*) &response->response;
                 parse_broadcast_packet(broadcast, da);
                 break;
@@ -259,15 +296,15 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
                 }
                 break;
             }
-            case TIMEOUT_RESP_TYPE: // 'T' 
+            case TIMEOUT_RESP_TYPE: // 'T'
                 if (size == TIMEOUT_MAX) {
                 #ifdef DEBUG_ON // DEBUG_ON
                     Serial.printf("Timeout.\r\n");
                 #endif // DEBUG_ON
- 
+
                 }
                 break;
-            case UNICAST_RESP_TYPE: // 'U' 
+            case UNICAST_RESP_TYPE: // 'U'
             {
                 UnicastResponsePacket_t* unicast = (UnicastResponsePacket_t*) &response->response;
                 parse_unicast_packet(unicast, da);
@@ -278,7 +315,7 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
             #ifdef DEBUG_ON // DEBUG_ON
                 Serial.printf("Unhandled packet type for modem response.\r\n\tType Received: %c\r\n", (char) response->type);
             #endif // DEBUG_ON
- 
+
                 break;
         }
     } else {
@@ -286,7 +323,14 @@ void packet_received_modem(uint8_t* packetBuffer, uint8_t size, DeviceAction_t* 
         Serial.printf("Error...\r\n");
         Serial.printf("Packet does not follow normal acoustic packet structure.\r\n\tPrefix: %c\r\n", (char) pkt->type);
     #endif // DEBUG_ON
- 
+
         return;
     }
+}
+
+void
+nmv3_init(
+    void
+){
+
 }
