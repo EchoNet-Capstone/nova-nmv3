@@ -67,7 +67,21 @@ printBufferContents(
 }
 
 // BEGIN MODEM SERIAL CONNECTION FUNCTIONS -----------------
-GET_SET_FUNC_DEF(uint8_t, modem_id, 0)
+uint8_t modem_id = 0;
+
+uint8_t
+get_modem_id(
+    void
+){
+    return modem_id;
+}
+
+void
+set_modem_id(
+    uint8_t new_modem_id
+){
+    modem_id = new_modem_id;
+}
 
 void
 query_status(

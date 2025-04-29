@@ -2,18 +2,6 @@
 
 #include <stdint.h>
 
-#include <Arduino.h>
-
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
-
-#include <get_set_macros.hpp>
-#include <device_actions.hpp>
-
 // --- Sizes ---
 #define MODEM_MSG_MIN 2
 #define MODEM_DATA_MIN 2
@@ -889,7 +877,15 @@ struct ParseResult {
 
 // --- Function Prototypes ---
 
-GET_SET_FUNC_PROTO(uint8_t, modem_id)
+uint8_t
+get_modem_id(
+    void
+);
+
+void
+set_modem_id(
+    uint8_t new_modem_id
+);
 
 void
 query_status(
