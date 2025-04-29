@@ -855,12 +855,14 @@ ModemPacket_t {
                                                 TIMEOUT_MAX
 
 // --- Response Structs ---
-enum class ParseResultType {
-    None,
-    BroadcastReceived,
-    PingResponse,
-    StatusQuery,
-    SetAddress,
+enum ParseResultType {
+    NONE_TYPE,
+    ERROR_TYPE,
+    BROAD_RECV_TYPE,
+    UNICAST_RECV_TYPE,
+    PING_RESP_TYPE,
+    STATUS_QUERY_TYPE,
+    SET_ADDR_TYPE,
 };
 
 struct ParseResult {

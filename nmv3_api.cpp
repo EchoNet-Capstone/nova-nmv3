@@ -13,6 +13,8 @@
 
 #define SOUND_SPEED 1500
 
+static const ParseResult kNoneResult = { .type = NONE_TYPE };
+
 // Supported Modem Commands (Link Quality Indicator OFF)
 //  Query Status                                DONE
 //  Set Address                                 DONE
@@ -132,6 +134,14 @@ parse_status_query_packet(
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Status query packet received.\r\n\tDevice addr : %03ld\r\n\tDevice Supply Voltage : %f\r\n", node_addr, supply_voltage);
 #endif // DEBUG_ON
+
+    ParseResult result;
+
+    result.type = STATUS_QUERY_TYPE;
+    result.status.node_addr = node_addr;
+    result.status.voltage = supply_voltage;
+
+    return result;
 }
 
 ParseResult
@@ -145,6 +155,13 @@ parse_set_address_packet(
 #endif // DEBUG_ON
 
     set_modem_id(new_addr);
+
+    ParseResult result;
+
+    result.type = SET_ADDR_TYPE;
+    result.set_addr.new_addr = new_addr;
+
+    return result;
 }
 
 ParseResult
@@ -163,8 +180,19 @@ parse_broadcast_packet(
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Broadcast packet received.\r\n\tPacket Source Modem: %03ld\r\n\tMessage Size: %ld\r\n", src_addr, bytes);
 #endif // DEBUG_ON
+
+    ParseResult result;
+
+    result.type = BROAD_RECV_TYPE;
+    result.broadcast.src_addr = src_addr;
+    result.broadcast.payload = message;
+    result.broadcast.payload_size = bytes;
+
+    return result;
 }
 
+
+// TODO: Fix up parse_unicast_packet
 ParseResult
 parse_unicast_packet(
     UnicastResponsePacket_t* unicast
@@ -193,6 +221,14 @@ parse_ping_packet(
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Ping (or ACK) packet received.\r\n\tAddr : %03ld\r\n\tRange (m) : %f\r\n", src_addr, meter_range);
 #endif // DEBUG_ON
+
+    ParseResult result;
+
+    result.type = PING_RESP_TYPE;
+    result.ping.src_addr = src_addr;
+    result.ping.meter_range = meter_range;
+
+    return result;
 }
 
 ParseResult
@@ -207,7 +243,7 @@ packet_received_modem(
 
     if (size < 1) {
         // Should never happen over serial connection.
-        return;
+        return kNoneResult;
     }
 
     if (packetBuffer[0] == ERROR_TYPE && size == ERROR_MAX) { // 'E'
@@ -215,7 +251,11 @@ packet_received_modem(
         Serial.printf("Error packet received.\r\n");
     #endif // DEBUG_ON
 
-        return;
+        ParseResult result;
+
+        result.type = ERROR_TYPE;
+
+        return result;
     }
 
     if (size < MODEM_MSG_MIN) {
@@ -223,7 +263,7 @@ packet_received_modem(
         Serial.printf("Packet invalid, size too small.\r\n");
     #endif // DEBUG_ON
 
-        return;
+        return kNoneResult;
     }
 
     ModemPacket_t* pkt = (ModemPacket_t*) packetBuffer;
@@ -248,11 +288,8 @@ packet_received_modem(
 
                     Serial.printf(" bytes sent.\r\n");
                 #endif // DEBUG_ON
-
-                    break;
-                } else {
-
                 }
+                break;
             case CHN_IMP_CMD_LOCAL_RESP_TYPE: // 'C' Will also be reached if it's a Corrected Error Local Response Packet
                 break;
             case ECHO_MSG_CMD_LOCAL_RESP_TYPE: // 'E'
@@ -261,6 +298,7 @@ packet_received_modem(
                 if (size == UNICAST_ACK_CMD_LOCAL_RESP_PACKET_SIZE) {
                     break;
                 }
+                break;
             case PING_CMD_LOCAL_RESP_TYPE: // 'P'
                 if (size == PING_CMD_LOCAL_RESP_PACKET_SIZE) {
                 #ifdef DEBUG_ON // DEBUG_ON
@@ -275,6 +313,7 @@ packet_received_modem(
 
                     break;
                 }
+                break;
             case RESET_CMD_LOCAL_RESP_TYPE: // 'R'
                 break;
             case SPEC_MSR_CMD_LOCAL_RESP_TYPE: // 'S'
@@ -285,9 +324,9 @@ packet_received_modem(
                 if (size == UNICAST_CMD_LOCAL_RESP_PACKET_SIZE) {
                     break;
                 }
+                break;
             case VOLT_NOISE_MSR_CMD_LOCAL_RESP_TYPE: // 'V'
                 break;
-
             default:
             #ifdef DEBUG_ON // DEBUG_ON
                 Serial.printf("Unhandled packet type for local response.\r\n\tType Received: %c\r\n", (char) localResp->type);
@@ -337,7 +376,6 @@ packet_received_modem(
                 #ifdef DEBUG_ON // DEBUG_ON
                     Serial.printf("Timeout.\r\n");
                 #endif // DEBUG_ON
-
                 }
                 break;
             case UNICAST_RESP_TYPE: // 'U'
@@ -359,7 +397,7 @@ packet_received_modem(
         Serial.printf("Error...\r\n");
         Serial.printf("Packet does not follow normal acoustic packet structure.\r\n\tPrefix: %c\r\n", (char) pkt->type);
     #endif // DEBUG_ON
-
-        return;
     }
+
+    return kNoneResult;
 }
