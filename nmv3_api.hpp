@@ -818,7 +818,6 @@ ModemPacket_t {
     ModemPacketTypes_e type;
     ModemPacketVariant_u payload;
 };
-
 #pragma pack(pop)
 
 // --- Packet Sizes ---
@@ -855,6 +854,37 @@ ModemPacket_t {
 #define TIMEOUT_PACKET_SIZE                     MODEM_RESP_HEADER_SIZE + \
                                                 TIMEOUT_MAX
 
+// --- Response Structs ---
+enum class ParseResultType {
+    None,
+    BroadcastReceived,
+    PingResponse,
+    StatusQuery,
+    SetAddress,
+};
+
+struct ParseResult {
+    ParseResultType type;
+    union {
+        struct {
+            uint8_t src_addr;
+            uint8_t* payload;
+            uint8_t payload_size;
+        } broadcast;
+        struct {
+            uint8_t src_addr;
+            float meter_range;
+        } ping;
+        struct {
+            uint8_t node_addr;
+            float voltage;
+        } status;
+        struct {
+            uint8_t new_addr;
+        } set_addr;
+    };
+};
+
 // --- Function Prototypes ---
 
 GET_SET_FUNC_PROTO(uint8_t, modem_id)
@@ -883,47 +913,33 @@ ping(
     uint8_t addr
 );
 
-void
+ParseResult
 parse_status_query_packet(
-    QueryStatusResponseFullPacket_t* statusResponse,
-    DeviceAction_t* da
+    QueryStatusResponseFullPacket_t* statusResponse
 );
 
-void
+ParseResult
 parse_set_address_packet(
-    SetAddressResponsePacket_t* setAddressResponse,
-    DeviceAction_t* da
+    SetAddressResponsePacket_t* setAddressResponse
 );
 
-void
+ParseResult
 parse_broadcast_packet(
-    BroadcastMessageResponsePacket_t* broadcast,
-    DeviceAction_t* da
+    BroadcastMessageResponsePacket_t* broadcast
 );
 
-void
+ParseResult
 parse_ping_packet(
-    RangeDataResponsePacket_t* rangeResponse,
-    DeviceAction_t* da
+    RangeDataResponsePacket_t* rangeResponse
 );
 
-void
+ParseResult
 parse_unicast_packet(
-    UnicastResponsePacket_t* unicast,
-    DeviceAction_t* da
+    UnicastResponsePacket_t* unicast
 );
 
-void
+ParseResult
 packet_received_modem(
-    uint8_t* packetBuffer, uint8_t size, DeviceAction_t* da
-);
-
-void
-nmv3_service(
-    void
-);
-
-void
-nmv3_init(
-    void
+    uint8_t* packetBuffer, 
+    uint8_t size
 );

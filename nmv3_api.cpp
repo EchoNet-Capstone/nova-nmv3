@@ -9,13 +9,9 @@
 #undef max
 #endif
 
-#include <device_actions.hpp>
-#include <display.hpp>
-#include <floc.hpp>
-#include <globals.hpp>
-#include <utils.hpp>
-
 #include "nmv3_api.hpp"
+
+#define SOUND_SPEED 1500
 
 // Supported Modem Commands (Link Quality Indicator OFF)
 //  Query Status                                DONE
@@ -27,6 +23,46 @@
 //  Battery Voltage and Noise Measurement*      TBD
 //  Error
 //  Timeout
+
+// ----- Helper functions -----
+
+int
+fieldToInt(
+    char* field,
+    uint8_t field_len
+){
+    char temp[field_len + 1] = {0};
+
+    memcpy(temp, field, field_len);
+    temp[field_len] = '\0';
+
+    return atoi(temp);
+}
+
+void
+printBufferContents(
+    uint8_t* buf,
+    uint8_t size
+){
+    if (size == 0) Serial.printf("\tOops! This buffer is empty!\r\n"); return;
+
+    Serial.printf("\tBuffer Contents (%03u bytes): \r\n", size);
+    Serial.printf("\t    |     0          1          2          3          4          5          6          7\r\n");
+
+    int i = 0;
+    for (; i < size - 1; i++) {
+        if (i % 8 == 0)
+            Serial.printf("\r\n\t%2i |", i / 8);
+
+        Serial.printf("%c (%03u), ", (char)buf[i], buf[i]);
+    }
+
+    // Final byte — no trailing comma
+    if (i % 8 == 0)
+        Serial.printf("\r\n\t%2i |", i / 8);
+
+    Serial.printf("%c (%03u)\r\n", (char)buf[i], buf[i]);
+}
 
 // BEGIN MODEM SERIAL CONNECTION FUNCTIONS -----------------
 GET_SET_FUNC_DEF(uint8_t, modem_id, 0)
@@ -83,7 +119,10 @@ ping(
     connection.printf("$P%03d", addr);
 }
 
-void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, DeviceAction_t* da) {
+ParseResult
+parse_status_query_packet(
+    QueryStatusResponseFullPacket_t* statusResponse
+){
     uint8_t node_addr = (uint8_t) fieldToInt((char*) statusResponse->addr, QUERY_STATUS_RESP_ADDR_MAX);
 
     uint16_t supply_voltage_meas = (uint16_t) fieldToInt((char*) statusResponse->voltPayload, QUERY_STATUS_RESP_VOLT_PAYLOAD_MAX);
@@ -93,14 +132,11 @@ void parse_status_query_packet(QueryStatusResponseFullPacket_t* statusResponse, 
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Status query packet received.\r\n\tDevice addr : %03ld\r\n\tDevice Supply Voltage : %f\r\n", node_addr, supply_voltage);
 #endif // DEBUG_ON
-
-    floc_status_send(statusResponse);
 }
 
-void
+ParseResult
 parse_set_address_packet(
-    SetAddressResponsePacket_t* setAddressResponse,
-    DeviceAction_t* da
+    SetAddressResponsePacket_t* setAddressResponse
 ){
     uint8_t new_addr = (uint8_t) fieldToInt((char*) setAddressResponse->addr, SET_ADDRESS_RESP_ADDR_MAX);
 
@@ -109,13 +145,11 @@ parse_set_address_packet(
 #endif // DEBUG_ON
 
     set_modem_id(new_addr);
-    display_modem_id(get_modem_id());
 }
 
-void
+ParseResult
 parse_broadcast_packet(
-    BroadcastMessageResponsePacket_t* broadcast,
-    DeviceAction_t* da
+    BroadcastMessageResponsePacket_t* broadcast
 ){
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Parsing broadcast packet...\r\n");
@@ -129,14 +163,11 @@ parse_broadcast_packet(
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Broadcast packet received.\r\n\tPacket Source Modem: %03ld\r\n\tMessage Size: %ld\r\n", src_addr, bytes);
 #endif // DEBUG_ON
-
-    floc_broadcast_received(message, bytes, da);
 }
 
-void
+ParseResult
 parse_unicast_packet(
-    UnicastResponsePacket_t* unicast,
-    DeviceAction_t* da
+    UnicastResponsePacket_t* unicast
 ){
     uint8_t bytes = (uint8_t) fieldToInt((char*) unicast->dataSize, UNICAST_RESP_DATA_SIZE_MAX);
 
@@ -150,10 +181,9 @@ parse_unicast_packet(
 }
 
 // Also handles ack packets from Unicast with ack command
-void
+ParseResult
 parse_ping_packet(
-    RangeDataResponsePacket_t* rangeResponse,
-    DeviceAction_t* da
+    RangeDataResponsePacket_t* rangeResponse
 ){
     uint8_t src_addr = (uint8_t) fieldToInt((char*) rangeResponse->addr, RANGE_RESP_ADDR_MAX);
     uint16_t ping_propogation_counter = (uint16_t) fieldToInt((char*) rangeResponse->rangePayload, RANGE_RESP_PAYLOAD_MAX);
@@ -165,11 +195,10 @@ parse_ping_packet(
 #endif // DEBUG_ON
 }
 
-void
+ParseResult
 packet_received_modem(
     uint8_t* packetBuffer,
-    uint8_t size,
-    DeviceAction_t* da
+    uint8_t size
 ){
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Modem Packet Received...");
@@ -279,17 +308,17 @@ packet_received_modem(
                 QueryStatusResponsePacket_t* statusResponse = (QueryStatusResponsePacket_t*) &response->response;
                 if (size == QUERY_STATUS_RESP_PACKET_SIZE) {
                     QueryStatusResponseFullPacket_t* fullStatus = (QueryStatusResponseFullPacket_t*) &statusResponse->status;
-                    parse_status_query_packet(fullStatus, da);
+                    return parse_status_query_packet(fullStatus);
                 } else if (size == SET_ADDRESS_RESP_PACKET_SIZE) {
                     SetAddressResponsePacket_t* setAddressResponse = (SetAddressResponsePacket_t*) &statusResponse->status;
-                    parse_set_address_packet(setAddressResponse, da);
+                    return parse_set_address_packet(setAddressResponse);
                 }
                 break;
             }
             case BROADCAST_RESP_TYPE: // 'B'
             {
                 BroadcastMessageResponsePacket_t* broadcast = (BroadcastMessageResponsePacket_t*) &response->response;
-                parse_broadcast_packet(broadcast, da);
+                return parse_broadcast_packet(broadcast);
                 break;
             }
             case CHN_IMP_RESP_TYPE: // 'C'
@@ -299,7 +328,7 @@ packet_received_modem(
                 RangeDataResponsePacket_t* rangeResponse = (RangeDataResponsePacket_t*) &response->response;
 
                 if (size == RANGE_RESP_PACKET_SIZE) {
-                    parse_ping_packet(rangeResponse, da);
+                    return parse_ping_packet(rangeResponse);
                 }
                 break;
             }
@@ -314,7 +343,7 @@ packet_received_modem(
             case UNICAST_RESP_TYPE: // 'U'
             {
                 UnicastResponsePacket_t* unicast = (UnicastResponsePacket_t*) &response->response;
-                parse_unicast_packet(unicast, da);
+                return parse_unicast_packet(unicast);
                 break;
             }
 
