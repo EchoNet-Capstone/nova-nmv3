@@ -1,5 +1,4 @@
-#ifndef HELTEC_SERIAL_API_H
-#define HELTEC_SERIAL_API_H
+#pragma once
 
 #include <stdint.h>
 
@@ -913,8 +912,11 @@ packet_received_modem(
 );
 
 void
-nmv3_init(
+nmv3_service(
     void
 );
 
-#endif
+void
+nmv3_init(
+    void
+);

@@ -327,10 +327,3 @@ packet_received_modem(
         return;
     }
 }
-
-void
-nmv3_init(
-    void
-){
-
-}
