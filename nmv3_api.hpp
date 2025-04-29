@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <HardwareSerial.h>
 
 // --- Sizes ---
 #define MODEM_MSG_MIN 2

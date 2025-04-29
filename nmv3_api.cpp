@@ -28,6 +28,7 @@ static const ParseResult kNoneResult = { .type = NONE_TYPE };
 
 // ----- Helper functions -----
 
+static
 int
 fieldToInt(
     char* field,
@@ -41,6 +42,7 @@ fieldToInt(
     return atoi(temp);
 }
 
+static
 void
 printBufferContents(
     uint8_t* buf,
