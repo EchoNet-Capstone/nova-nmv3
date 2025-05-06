@@ -70,6 +70,21 @@ printBufferContents(
 
 // BEGIN MODEM SERIAL CONNECTION FUNCTIONS -----------------
 uint8_t modem_id = 0;
+bool modem_id_set = false;
+
+bool
+get_modem_id_set(
+    void
+){
+    return modem_id_set;
+}
+
+bool
+set_modem_id_set(
+    bool new_modem_id_set
+){
+    modem_id_set = new_modem_id_set;
+}
 
 uint8_t
 get_modem_id(
@@ -97,6 +112,7 @@ set_address(
     HardwareSerial connection,
     uint8_t addr
 ){
+    set_modem_id_set(false);
     connection.printf("$A%03d", addr);
 }
 
@@ -171,6 +187,7 @@ parse_set_address_packet(
 #endif // DEBUG_ON
 
     set_modem_id(new_addr);
+    set_modem_id_set(true);
 
     ParseResult result;
 

@@ -878,14 +878,14 @@ struct ParseResult {
 
 // --- Function Prototypes ---
 
-uint8_t
-get_modem_id(
+bool
+get_modem_id_set(
     void
 );
 
-void
-set_modem_id(
-    uint8_t new_modem_id
+uint8_t
+get_modem_id(
+    void
 );
 
 void
