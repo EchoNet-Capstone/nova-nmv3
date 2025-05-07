@@ -9,13 +9,13 @@
 #undef max
 #endif
 
-#include <debug.hpp>
-
 #include "nmv3_api.hpp"
 
 #define SOUND_SPEED 1500
 
 static const ParseResult kNoneResult = { .type = NONE_TYPE };
+
+extern HardwareSerial& modem_connection;
 
 // Supported Modem Commands (Link Quality Indicator OFF)
 //  Query Status                                DONE
@@ -107,24 +107,22 @@ set_modem_id(
 
 void
 query_status(
-    HardwareSerial connection
+    void
 ){
-    connection.print("$?");
+    modem_connection.print("$?");
 }
 
 void
 set_address(
-    HardwareSerial& connection,
     uint8_t addr
 ) {
     set_modem_id_set(false);
 
-    connection.printf("$A%03d", addr);
+    modem_connection.printf("$A%03d", addr);
 }
 
 void
 broadcast(
-    HardwareSerial connection,
     char *data,
     uint8_t bytes
 ){
@@ -148,25 +146,20 @@ broadcast(
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
 
-    connection.write((uint8_t *) &pkt, pkt_size);
+    modem_connection.write((uint8_t *) &pkt, pkt_size);
 }
 
 void
 ping(
-    HardwareSerial connection,
     uint8_t addr
 ){
-    connection.printf("$P%03d", addr);
+    modem_connection.printf("$P%03d", addr);
 }
 
 ParseResult
 parse_status_query_packet(
     QueryStatusResponseFullPacket_t* statusResponse
 ){
-#ifdef DEBUG_ON // DEBUG_ON
-    print_stack_trace();
-#endif
-
     uint8_t node_addr = (uint8_t) fieldToInt((char*) statusResponse->addr, QUERY_STATUS_RESP_ADDR_MAX);
 
     uint16_t supply_voltage_meas = (uint16_t) fieldToInt((char*) statusResponse->voltPayload, QUERY_STATUS_RESP_VOLT_PAYLOAD_MAX);

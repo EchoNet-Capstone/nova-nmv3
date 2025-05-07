@@ -890,25 +890,22 @@ get_modem_id(
 
 void
 query_status(
-    HardwareSerial connection
+    void
 );
 
 void
 set_address(
-    HardwareSerial& connection,
     uint8_t addr
 );
 
 void
 broadcast(
-    HardwareSerial connection,
     char *data,
     uint8_t bytes
 );
 
 void
 ping(
-    HardwareSerial connection,
     uint8_t addr
 );
 
