@@ -50,7 +50,10 @@ printBufferContents(
     uint8_t* buf,
     uint8_t size
 ){
-    if (size == 0) Serial.printf("\tOops! This buffer is empty!\r\n"); return;
+    if (size == 0) {
+        Serial.printf("\tOops! This buffer is empty!\r\n"); 
+        return;
+    }
 
     Serial.printf("\tBuffer Contents (%03u bytes): \r\n", size);
     Serial.printf("\t    |     0          1          2          3          4          5          6          7\r\n");
@@ -113,14 +116,28 @@ void
 set_address(
     HardwareSerial& connection,
     uint8_t addr
-){
+) {
+    Serial.printf("Connection address: %p\n", (void*)&connection);
+
+#ifdef DEBUG_ON // DEBUG_ON
+    Serial.printf("Inside Set Address...");
+#endif
+
     set_modem_id_set(false);
 
 #ifdef DEBUG_ON // DEBUG_ON
-    print_stack_trace();
+    Serial.printf("After set_modem_id_set...");
+#endif
+
+#ifdef DEBUG_ON // DEBUG_ON
+    Serial.printf("Before command send...");
 #endif
 
     connection.printf("$A%03d", addr);
+
+#ifdef DEBUG_ON // DEBUG_ON
+    Serial.printf("After command send...");
+#endif
 }
 
 void
