@@ -895,7 +895,7 @@ query_status(
 
 void
 set_address(
-    HardwareSerial connection,
+    HardwareSerial& connection,
     uint8_t addr
 );
 

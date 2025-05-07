@@ -9,6 +9,8 @@
 #undef max
 #endif
 
+#include <debug.hpp>
+
 #include "nmv3_api.hpp"
 
 #define SOUND_SPEED 1500
@@ -109,10 +111,15 @@ query_status(
 
 void
 set_address(
-    HardwareSerial connection,
+    HardwareSerial& connection,
     uint8_t addr
 ){
     set_modem_id_set(false);
+
+#ifdef DEBUG_ON // DEBUG_ON
+    print_stack_trace();
+#endif
+
     connection.printf("$A%03d", addr);
 }
 
@@ -157,6 +164,10 @@ ParseResult
 parse_status_query_packet(
     QueryStatusResponseFullPacket_t* statusResponse
 ){
+#ifdef DEBUG_ON // DEBUG_ON
+    print_stack_trace();
+#endif
+
     uint8_t node_addr = (uint8_t) fieldToInt((char*) statusResponse->addr, QUERY_STATUS_RESP_ADDR_MAX);
 
     uint16_t supply_voltage_meas = (uint16_t) fieldToInt((char*) statusResponse->voltPayload, QUERY_STATUS_RESP_VOLT_PAYLOAD_MAX);
