@@ -84,7 +84,7 @@ get_modem_id_set(
     return modem_id_set;
 }
 
-bool
+void
 set_modem_id_set(
     bool new_modem_id_set
 ){
@@ -117,27 +117,9 @@ set_address(
     HardwareSerial& connection,
     uint8_t addr
 ) {
-    Serial.printf("Connection address: %p\n", (void*)&connection);
-
-#ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Inside Set Address...");
-#endif
-
     set_modem_id_set(false);
 
-#ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("After set_modem_id_set...");
-#endif
-
-#ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Before command send...");
-#endif
-
     connection.printf("$A%03d", addr);
-
-#ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("After command send...");
-#endif
 }
 
 void
