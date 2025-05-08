@@ -1,0 +1,25 @@
+{
+    "name": "Nmv3",
+    "version": "1.0.0",
+    "description": "NanoModem V3 api library",
+    "keywords": "internal, device",
+    "authors": [
+      {
+        "name": "Cooper Mattern",
+        "email": "cnamattern@gmail.com",
+        "url": "https://github.com/bobjoe400"
+      },
+      {
+        "name": "Daniel Brathwaite"
+      },
+      {
+        "name": "Nina St. John"
+      },
+      {
+        "name": "Armaan Oberai"
+      }
+    ],
+    "build": { 
+      "flags": ["-Wall", "-Wextra"]
+    }
+  }
