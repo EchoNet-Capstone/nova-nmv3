@@ -10,6 +10,7 @@
 #endif
 
 #include "nmv3_api.hpp"
+#include "neighbor.hpp"
 
 #define SOUND_SPEED 1500
 
@@ -243,6 +244,8 @@ parse_ping_packet(
     result.type = PING_RESP_TYPE;
     result.ping.src_addr = src_addr;
     result.ping.meter_range = meter_range;
+
+    neighborManager.update_neighbors(src_addr, meter_range);
 
     return result;
 }
