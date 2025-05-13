@@ -11,6 +11,7 @@
 
 #include "nmv3_api.hpp"
 #include "neighbor.hpp"
+#include "bloomfilter.hpp"
 
 #define SOUND_SPEED 1500
 
@@ -284,6 +285,15 @@ packet_received_modem(
 
         return kNoneResult;
     }
+
+    if (bloom_check_packet(packetBuffer, size)) {
+    #ifdef DEBUG_ON
+        Serial.printf("Duplicate packet (raw hash), dropping.\n");
+    #endif
+        return kNoneResult;
+    }
+        
+    bloom_add_packet(packetBuffer, size);
 
     ModemPacket_t* pkt = (ModemPacket_t*) packetBuffer;
 
