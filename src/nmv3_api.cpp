@@ -14,7 +14,8 @@
 #endif // ARDUINO
 
 #include "nmv3_api.hpp"
-#include "nmv3_utils.hpp"
+#include "neighbor.hpp"
+#include "bloomfilter.hpp"
 
 #define SOUND_SPEED 1500
 
@@ -224,6 +225,8 @@ parse_ping_packet(
     result.ping.src_addr = src_addr;
     result.ping.meter_range = meter_range;
 
+    neighborManager.update_neighbors(src_addr, meter_range);
+
     return result;
 }
 
@@ -261,6 +264,16 @@ packet_received_modem(
 
         return kNoneResult;
     }
+
+    if (bloom_check_packet(packetBuffer, size)) {
+    #ifdef DEBUG_ON
+        Serial.printf("Duplicate packet (raw hash), dropping.\n");
+    #endif
+        return kNoneResult;
+    }
+        
+    maybe_reset_bloom_filter();
+    bloom_add_packet(packetBuffer, size);
 
     ModemPacket_t* pkt = (ModemPacket_t*) packetBuffer;
 
