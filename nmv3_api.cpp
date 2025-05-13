@@ -293,6 +293,7 @@ packet_received_modem(
         return kNoneResult;
     }
         
+    maybe_reset_bloom_filter();
     bloom_add_packet(packetBuffer, size);
 
     ModemPacket_t* pkt = (ModemPacket_t*) packetBuffer;
