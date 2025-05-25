@@ -2,6 +2,8 @@
 
 This library provides a C++ interface for communicating with Succorfish Delphis acoustic modems. It implements a subset of the NMv3 protocol for underwater acoustic communication.
 
+**Note:** The header file (`nmv3_api.hpp`) contains complete packet structure definitions for the full Delphis modem protocol specification, including all command types, response formats, and data fields. However, only the essential commands needed for our specific application have been implemented in the C++ code.
+
 ## Features
 
 - Modem status querying (address and voltage only)
@@ -34,13 +36,24 @@ The library implements a subset of the protocol's capabilities:
 - Uses 1500 m/s sound speed for calculations
 
 ### Ignored Protocol Features
-The following data fields from the protocol spec are not processed, but easily can be if needed:
+The following data fields from the protocol spec are thrown away, but easily can be if needed:
 - Link Quality indicators (quality and Doppler)
 - System time data
 - Release version information
 - Build time information
 - Noise measurements
 - Extended voltage data
+
+### Unimplemented Packet Types
+The following packet types are fully defined in the header file but not implemented in the C++ code:
+- Channel Impulse Response packets
+- Echo Message packets
+- Unicast with Acknowledgment packets
+- Test Message packets
+- Spectrum Measurement packets
+- Voltage and Noise Measurement packets
+- Extension Command packets (System Time, Link Quality control)
+- Corrected Errors packets
 
 ## Usage
 
@@ -81,13 +94,11 @@ void ping(uint8_t addr);
 All packets follow a standard format:
 - Prefix byte (Command: '$', Response: '#', Error: 'E')
 - Command/Response type byte
-- Payload (variable length)
+- Payload (variable length, all defined in `nmv3_api.hpp`)
 - *Note: Optional extra data fields (Time, Link Quality) are ignored*
 
 ### Maximum Sizes
 - Maximum payload size: 64 bytes
-- Maximum address size: 3 bytes
-- Maximum data size: 2 bytes
 
 ## Notes
 
@@ -97,4 +108,3 @@ All packets follow a standard format:
 - Only basic packet parsing is implemented, ignoring extended data fields
 - Error handling focuses on basic packet validation
 
-For complete protocol specifications including unimplemented features, refer to the header files.
