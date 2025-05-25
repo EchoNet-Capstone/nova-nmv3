@@ -9,7 +9,7 @@ This library provides a C++ interface for communicating with Succorfish Delphis 
 - Message broadcasting
 - Unicast messaging with acknowledgment
 - Ping functionality for range measurement
-- Battery voltage and noise measurement
+- Battery voltage measurement
 - Error handling and timeout management
 
 ## Supported Commands
@@ -22,7 +22,7 @@ The library supports the following commands:
 - Unicast Message with Acknowledgment
 - Ping
 - Unicast Message
-- Battery Voltage and Noise Measurement (with Query Status)
+- Battery Voltage Measurement (with Query Status)
 - Error Handling
 - Timeout Management
 
@@ -76,7 +76,7 @@ All packets follow a standard format:
 - Prefix byte (Command: '$', Response: '#', Error: 'E')
 - Command/Response type byte
 - Payload (variable length)
-- Optional extra data (Link Quality, Time)
+- Optional extra data (Time)
 
 ### Maximum Sizes
 - Maximum payload size: 64 bytes
@@ -97,6 +97,7 @@ Debug output can be enabled by defining `DEBUG_ON`. When enabled, the library wi
 - Sound speed is configured at 1500 m/s for range calculations
 - All communication is handled through the specified serial connection
 - The library handles both local echoes and remote responses
+- Battery voltage measurement is available through status query
 - Packet parsing is done automatically with error checking
 
 ## Error Handling
