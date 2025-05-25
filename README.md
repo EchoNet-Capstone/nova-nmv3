@@ -1,30 +1,46 @@
 # NMv3 Library for Succorfish Delphis Acoustic Modems
 
-This library provides a C++ interface for communicating with Succorfish Delphis acoustic modems. It implements the NMv3 protocol for underwater acoustic communication.
+This library provides a C++ interface for communicating with Succorfish Delphis acoustic modems. It implements a subset of the NMv3 protocol for underwater acoustic communication.
 
 ## Features
 
-- Modem status querying
-- Address configuration
-- Message broadcasting
-- Unicast messaging with acknowledgment
+- Modem status querying (address and voltage only)
+- Basic address configuration
+- Simple message broadcasting
 - Ping functionality for range measurement
-- Battery voltage measurement
-- Error handling and timeout management
 
-## Supported Commands
+## Supported Commands and Data Fields
 
-The library supports the following commands:
+The library implements a subset of the protocol's capabilities:
 
-- Query Status (`$?`)
-- Set Address (`$AXXX`)
-- Broadcast Message
-- Unicast Message with Acknowledgment
-- Ping
-- Unicast Message
-- Battery Voltage Measurement (with Query Status)
-- Error Handling
-- Timeout Management
+### Query Status (`$?`)
+- Returns: 
+  - Modem address
+  - Supply voltage
+  - *Note: Release info and build time fields are ignored*
+
+### Set Address (`$AXXX`)
+- Sets modem address
+- Returns confirmation with new address
+
+### Broadcast Message
+- Sends basic payload to all modems
+- Returns source address and payload
+- *Note: Extended voltage and noise data variants are ignored*
+
+### Ping
+- Measures range to another modem
+- Returns source address and range data
+- Uses 1500 m/s sound speed for calculations
+
+### Ignored Protocol Features
+The following data fields from the protocol spec are not processed, but easily can be if needed:
+- Link Quality indicators (quality and Doppler)
+- System time data
+- Release version information
+- Build time information
+- Noise measurements
+- Extended voltage data
 
 ## Usage
 
@@ -58,16 +74,6 @@ void broadcast(char *data, uint8_t bytes);
 void ping(uint8_t addr);
 ```
 
-### Response Handling
-
-The library includes a comprehensive packet parser that handles various response types:
-- Status query responses
-- Address setting confirmations
-- Broadcast message responses
-- Ping responses with range data
-- Unicast message responses
-- Error packets
-
 ## Protocol Details
 
 ### Packet Structure
@@ -76,36 +82,19 @@ All packets follow a standard format:
 - Prefix byte (Command: '$', Response: '#', Error: 'E')
 - Command/Response type byte
 - Payload (variable length)
-- Optional extra data (Time)
+- *Note: Optional extra data fields (Time, Link Quality) are ignored*
 
 ### Maximum Sizes
 - Maximum payload size: 64 bytes
 - Maximum address size: 3 bytes
 - Maximum data size: 2 bytes
 
-## Debug Mode
-
-Debug output can be enabled by defining `DEBUG_ON`. When enabled, the library will output detailed information about packet processing and communication events.
-
-## Dependencies
-
-- Arduino framework (when used with Arduino)
-- Standard C++ libraries
-
 ## Notes
 
-- Sound speed is configured at 1500 m/s for range calculations
+- Sound speed is fixed at 1500 m/s for range calculations
 - All communication is handled through the specified serial connection
 - The library handles both local echoes and remote responses
-- Battery voltage measurement is available through status query
-- Packet parsing is done automatically with error checking
+- Only basic packet parsing is implemented, ignoring extended data fields
+- Error handling focuses on basic packet validation
 
-## Error Handling
-
-The library includes robust error handling:
-- Invalid packet detection
-- Size validation
-- Type checking
-- Response validation
-
-For detailed protocol specifications and implementation details, refer to the header files and source code documentation.
+For complete protocol specifications including unimplemented features, refer to the header files.
