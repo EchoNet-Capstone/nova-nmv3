@@ -1,6 +1,5 @@
 #include <string.h>
 
-#ifdef ARDUINO // ARDUINO
 #include <Arduino.h>
 
 #ifdef min // min
@@ -10,8 +9,6 @@
 #ifdef max //min
 #undef max
 #endif //min
-
-#endif // ARDUINO
 
 #include "nmv3_utils.hpp"
 #include "nmv3_api.hpp"
@@ -69,7 +66,20 @@ void
 query_status(
     void
 ){
-    modem_connection.print("$?");
+    ModemPacket_t pkt;
+    memset(&pkt, 0, sizeof(pkt));
+
+    pkt.type = MODEM_COMMAND_TYPE;
+    pkt.payload.command.type = QUERY_STATUS_CMD_TYPE;
+
+    uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX);
+
+#ifdef DEBUG_ON // DEBUG_ON
+    Serial.printf("Sending Query Status Command:\r\n");
+    printBufferContents((uint8_t*) &pkt, pkt_size);
+#endif // DEBUG_ON
+
+    modem_connection.write((uint8_t *) &pkt, pkt_size);
 }
 
 void
@@ -78,7 +88,25 @@ set_address(
 ) {
     set_modem_id_set(false);
 
-    modem_connection.printf("$A%03d", addr);
+    ModemPacket_t pkt;
+    memset(&pkt, 0, sizeof(pkt));
+
+    pkt.type = MODEM_COMMAND_TYPE;
+    pkt.payload.command.type = SET_ADDRESS_CMD_TYPE;
+
+    char temp[SET_ADDRESS_CMD_MAX + 1] = {0};
+    snprintf(temp, sizeof(temp), "%03d", addr);
+
+    memcpy(pkt.payload.command.command.setAddress.addr, (uint8_t*) temp, SET_ADDRESS_CMD_ADDR_MAX);
+
+    uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX + SET_ADDRESS_CMD_MAX);
+
+#ifdef DEBUG_ON // DEBUG_ON
+    Serial.printf("Sending Set Address Command:\r\n");
+    printBufferContents((uint8_t*) &pkt, pkt_size);
+#endif // DEBUG_ON
+
+    modem_connection.write((uint8_t *) &pkt, pkt_size);
 }
 
 void
@@ -102,7 +130,7 @@ broadcast(
     uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX + BROADCAST_CMD_HDR_MAX + bytes);
 
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Sending Broadcast Command Packet:\r\n");
+    Serial.printf("Sending Broadcast Command:\r\n");
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
 
@@ -113,7 +141,25 @@ void
 ping(
     uint8_t addr
 ){
-    modem_connection.printf("$P%03d", addr);
+    ModemPacket_t pkt;
+    memset(&pkt, 0, sizeof(pkt));
+
+    pkt.type = MODEM_COMMAND_TYPE;
+    pkt.payload.command.type = PING_CMD_TYPE;
+
+    char temp[PING_CMD_ADDR_MAX + 1] = {0};
+    snprintf(temp, sizeof(temp), "%03d", addr);
+
+    memcpy(pkt.payload.command.command.ping.addr, temp, PING_CMD_ADDR_MAX);
+
+    uint8_t pkt_size = (MODEM_COMMAND_PRE_MAX + MODEM_COMMAND_TYPE_MAX + PING_CMD_MAX);
+
+#ifdef DEBUG_ON // DEBUG_ON
+    Serial.printf("Sending Ping Command:\r\n");
+    printBufferContents((uint8_t*) &pkt, pkt_size);
+#endif // DEBUG_ON
+
+    modem_connection.write((uint8_t *) &pkt, pkt_size);
 }
 
 ParseResult
@@ -233,8 +279,9 @@ packet_received_modem(
     uint8_t size
 ){
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Modem Packet Received...");
-    printBufferContents((uint8_t*) packetBuffer, size);
+    Serial.printf("Modem Packet Received...\r\n");
+    
+    printBufferContents(packetBuffer, size);
 #endif // DEBUG_ON
 
     if (size < 1) {

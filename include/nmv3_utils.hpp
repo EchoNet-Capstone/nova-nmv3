@@ -35,13 +35,22 @@ printBufferContents(
     uint8_t* buf,
     uint8_t size
 ){
+    if (buf == nullptr) {
+        Serial.printf("\tBuffer pointer is NULL!\r\n");
+        return;
+    }
+
     if (size == 0) {
         Serial.printf("\tOops! This buffer is empty!\r\n"); 
         return;
     }
 
-    Serial.printf("\tBuffer Contents (%03u bytes): \r\n", size);
-    Serial.printf("\t    |     0          1          2          3          4          5          6          7\r\n");
+    Serial.print("\tBuffer Contents (");
+    Serial.print(size);
+    Serial.print(" bytes): \r\n");
+
+    Serial.print("\t    |     0          1          2          3    ");
+    Serial.printf("      4          5          6          7\r\n");
 
     int i = 0;
     for (; i < size - 1; i++) {
