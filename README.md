@@ -13,16 +13,6 @@ This library provides a C++ packet parser and communication interface for Succor
 - Simple message broadcasting
 - Ping functionality for range measurement
 
-## Supported Commands and Data Fields
-
-The library implements these NMv3 protocol commands with selective data extraction:
-
-### Implemented Commands
-- **Query Status (`$?`)**: Extracts modem address and supply voltage *(ignores release info and build time)*
-- **Set Address (`$AXXX`)**: Sets and confirms new modem address
-- **Broadcast Message**: Sends/receives basic payload *(ignores extended voltage and noise data)*
-- **Ping**: Measures range using 1500 m/s sound speed *(ignores link quality indicators)*
-
 ### Ignored Protocol Features
 Data fields defined in the protocol spec but discarded during parsing:
 - Link Quality indicators (quality and Doppler)
