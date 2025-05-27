@@ -79,7 +79,7 @@ query_status(
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
 
-    modem_connection.write((uint8_t *) &pkt, pkt_size);
+    modem_connection.write((uint8_t*) &pkt, pkt_size);
 }
 
 void
@@ -106,12 +106,12 @@ set_address(
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
 
-    modem_connection.write((uint8_t *) &pkt, pkt_size);
+    modem_connection.write((uint8_t*) &pkt, pkt_size);
 }
 
 void
 broadcast(
-    char *data,
+    uint8_t* data,
     uint8_t bytes
 ){
     ModemPacket_t pkt;
@@ -134,7 +134,7 @@ broadcast(
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
 
-    modem_connection.write((uint8_t *) &pkt, pkt_size);
+    modem_connection.write((uint8_t*) &pkt, pkt_size);
 }
 
 void
@@ -159,7 +159,7 @@ ping(
     printBufferContents((uint8_t*) &pkt, pkt_size);
 #endif // DEBUG_ON
 
-    modem_connection.write((uint8_t *) &pkt, pkt_size);
+    modem_connection.write((uint8_t*) &pkt, pkt_size);
 }
 
 ParseResult
