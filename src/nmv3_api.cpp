@@ -220,7 +220,8 @@ parse_broadcast_packet(
     uint8_t* message = (uint8_t*) &broadcast->message;
 
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Broadcast packet received.\r\n\tPacket Source Modem: %03ld\r\n\tMessage Size: %ld\r\n", src_addr, bytes);
+    Serial.printf("Broadcast packet received.\r\n");
+    Serial.printf("\tPacket Source Modem: %03ld\r\n\tMessage Size: %ld\r\n", src_addr, bytes);
 #endif // DEBUG_ON
 
     ParseResult result;
