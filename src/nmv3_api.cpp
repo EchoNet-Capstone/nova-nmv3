@@ -173,7 +173,9 @@ parse_status_query_packet(
     float supply_voltage = (float)(supply_voltage_meas) * 15.0f / 65536.0f;
 
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Status query packet received.\r\n\tDevice addr : %03ld\r\n\tDevice Supply Voltage : %f\r\n", node_addr, supply_voltage);
+    Serial.printf("Status query packet received.\r\n");
+    Serial.printf("\tDevice addr : %03ld\r\n", node_addr);
+    Serial.printf("\tDevice Supply Voltage : %f\r\n", supply_voltage);
 #endif // DEBUG_ON
 
     ParseResult result;
@@ -192,7 +194,8 @@ parse_set_address_packet(
     uint8_t new_addr = (uint8_t) fieldToInt((char*) setAddressResponse->addr, SET_ADDRESS_RESP_ADDR_MAX);
 
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Set address packet received.\r\n\tNew Device addr : %03ld\r\n", new_addr);
+    Serial.printf("Set address packet received.\r\n");
+    Serial.printf("\tNew Device addr : %03ld\r\n", new_addr);
 #endif // DEBUG_ON
 
     set_modem_id(new_addr);
@@ -221,7 +224,8 @@ parse_broadcast_packet(
 
 #ifdef DEBUG_ON // DEBUG_ON
     Serial.printf("Broadcast packet received.\r\n");
-    Serial.printf("\tPacket Source Modem: %03ld\r\n\tMessage Size: %ld\r\n", src_addr, bytes);
+    Serial.printf("\tPacket Source Modem: %03ld\r\n", src_addr);
+    Serial.printf("\tMessage Size: %ld\r\n", bytes);
 #endif // DEBUG_ON
 
     ParseResult result;
@@ -246,8 +250,8 @@ parse_unicast_packet(
     memcpy(message, unicast->payload, bytes);
 
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Unicast packet received.\r\n\tPacket Bytes : %ld\r\n\tPacket data : ", bytes);
-    Serial.printf("%s\r\n", message);
+    Serial.printf("Unicast packet received.\r\n");
+    printBufferContents((uint8_t*) message, bytes);
 #endif // DEBUG_ON
 }
 
@@ -262,7 +266,9 @@ parse_ping_packet(
     float meter_range = static_cast<float>(ping_propogation_counter) * SOUND_SPEED * 3.125e-5;
 
 #ifdef DEBUG_ON // DEBUG_ON
-    Serial.printf("Ping (or ACK) packet received.\r\n\tAddr : %03ld\r\n\tRange (m) : %f\r\n", src_addr, meter_range);
+    Serial.printf("Ping (or ACK) packet received.\r\n");
+    Serial.printf("\tAddr : %03ld\r\n", src_addr);
+    Serial.printf("\tRange (m) : %f\r\n", meter_range);
 #endif // DEBUG_ON
 
     ParseResult result;
@@ -431,7 +437,8 @@ packet_received_modem(
 
             default:
             #ifdef DEBUG_ON // DEBUG_ON
-                Serial.printf("Unhandled packet type for modem response.\r\n\tType Received: %c\r\n", (char) response->type);
+                Serial.printf("Unhandled packet type for modem response.\r\n");
+                Serial.printf("\tType Received: %c\r\n", (char) response->type);
             #endif // DEBUG_ON
 
                 break;
@@ -439,7 +446,8 @@ packet_received_modem(
     } else {
     #ifdef DEBUG_ON // DEBUG_ON
         Serial.printf("Error...\r\n");
-        Serial.printf("Packet does not follow normal acoustic packet structure.\r\n\tPrefix: %c\r\n", (char) pkt->type);
+        Serial.printf("Packet does not follow normal acoustic packet structure.\r\n");
+        Serial.printf("\tPrefix: %c\r\n", (char) pkt->type);
     #endif // DEBUG_ON
     }
 
