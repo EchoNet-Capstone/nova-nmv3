@@ -851,6 +851,7 @@ enum ParseResultType {
     PING_RESP_TYPE,
     STATUS_QUERY_TYPE,
     SET_ADDR_TYPE,
+    TIMEOUT_TYPE,
 };
 
 struct ParseResult {

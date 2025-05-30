@@ -358,7 +358,7 @@ packet_received_modem(
                         Serial.printf("%c", ((PingLocalResponsePacket_t*) &localResp->response)->addr[i]);
                     }
 
-                    Serial.print("sent.\r\n");
+                    Serial.print(" sent.\r\n");
                 #endif // DEBUG_ON
 
                     break;
@@ -379,7 +379,8 @@ packet_received_modem(
                 break;
             default:
             #ifdef DEBUG_ON // DEBUG_ON
-                Serial.printf("Unhandled packet type for local response.\r\n\tType Received: %c\r\n", (char) localResp->type);
+                Serial.printf("Unhandled packet type for local response.\r\n");
+                Serial.printf("\tType Received: %c\r\n", (char) localResp->type);
             #endif // DEBUG_ON
 
                 break;
@@ -408,7 +409,6 @@ packet_received_modem(
             {
                 BroadcastMessageResponsePacket_t* broadcast = (BroadcastMessageResponsePacket_t*) &response->response;
                 return parse_broadcast_packet(broadcast);
-                break;
             }
             case CHN_IMP_RESP_TYPE: // 'C'
                 break;
@@ -427,12 +427,15 @@ packet_received_modem(
                     Serial.printf("Timeout.\r\n");
                 #endif // DEBUG_ON
                 }
-                break;
+                ParseResult result;
+                result.type = TIMEOUT_TYPE;
+
+                return result;
+
             case UNICAST_RESP_TYPE: // 'U'
             {
                 UnicastResponsePacket_t* unicast = (UnicastResponsePacket_t*) &response->response;
                 return parse_unicast_packet(unicast);
-                break;
             }
 
             default:
